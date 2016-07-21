@@ -12,6 +12,7 @@
 module.exports = createGraph;
 
 var eventify = require('ngraph.events');
+var _ = require('lodash');
 
 /**
  * Creates a new graph
@@ -270,7 +271,10 @@ function createGraph(options) {
 
     nodes[nodeId] = node;
 
-    exitModification();
+    // exitModification();
+    var dExitMod = debouncedExitModification();
+    dExitMod();
+
     return node;
   }
 
@@ -323,7 +327,9 @@ function createGraph(options) {
 
     recordLinkChange(link, 'add');
 
-    exitModification();
+    // exitModification();
+    var dExitMod = debouncedExitModification();
+    dExitMod();
 
     return link;
   }
@@ -478,6 +484,15 @@ function createGraph(options) {
       graphPart.fire('changed', changes);
       changes.length = 0;
     }
+  }
+
+  function debouncedExitModification() {
+    var performExitModification = function () {
+      suspendEvents = 1;
+      exitModification();
+    };
+
+    return _.debounce(performExitModification.bind(this), 100).bind(this);
   }
 
   function createNodeIterator() {
